@@ -1,10 +1,10 @@
-name: pr
+name: abc
 
 on: pull_request
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: test (pr)
+    name: test (abc)
     steps:
-      - uses: actions/checkout@v3
+      - run: ech "Hello, world!"
