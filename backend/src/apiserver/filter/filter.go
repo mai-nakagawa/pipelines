@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/golang/protobuf/ptypes"
 	apiv1beta1 "github.com/kubeflow/pipelines/backend/api/v1beta1/go_client"
 	apiv2beta1 "github.com/kubeflow/pipelines/backend/api/v2beta1/go_client"
 	"github.com/kubeflow/pipelines/backend/src/common/util"
@@ -213,31 +212,31 @@ func replaceMapKeys(m map[string][]interface{}, keyMap map[string]string, prefix
 
 func (f *Filter) FilterK8sPipelines(pipeline v2beta1.Pipeline) (bool, error) {
 	if len(f.eq) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "eq"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "eq"))
 	}
 
 	if len(f.neq) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "neq"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "neq"))
 	}
 
 	if len(f.gt) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "gt"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "gt"))
 	}
 
 	if len(f.gte) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "gte"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "gte"))
 	}
 
 	if len(f.lt) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "lt"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "lt"))
 	}
 
 	if len(f.lte) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "lte"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "lte"))
 	}
 
 	if len(f.in) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "in"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "in"))
 	}
 
 	for k := range f.substring {
@@ -253,31 +252,31 @@ func (f *Filter) FilterK8sPipelines(pipeline v2beta1.Pipeline) (bool, error) {
 
 func (f *Filter) FilterK8sPipelineVersions(pipelineVersion v2beta1.PipelineVersion) (bool, error) {
 	if len(f.eq) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "eq"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "eq"))
 	}
 
 	if len(f.neq) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "neq"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "neq"))
 	}
 
 	if len(f.gt) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "gt"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "gt"))
 	}
 
 	if len(f.gte) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "gte"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "gte"))
 	}
 
 	if len(f.lt) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "lt"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "lt"))
 	}
 
 	if len(f.lte) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "lte"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "lte"))
 	}
 
 	if len(f.in) > 0 {
-		return false, util.NewInvalidInputError(fmt.Sprintf(filterMessage, "in"))
+		return false, util.NewInvalidInputError("%s", fmt.Sprintf(filterMessage, "in"))
 	}
 
 	for k := range f.substring {
@@ -518,11 +517,7 @@ func toValue(v interface{}) (interface{}, error) {
 	case *apiv2beta1.Predicate_StringValue:
 		return v.StringValue, nil
 	case *apiv2beta1.Predicate_TimestampValue:
-		ts, err := ptypes.Timestamp(v.TimestampValue)
-		if err != nil {
-			return nil, util.NewInvalidInputError("invalid timestamp: %v", err)
-		}
-		return ts.Unix(), nil
+		return v.TimestampValue.AsTime().Unix(), nil
 	case *apiv2beta1.Predicate_IntValues_:
 		return v.IntValues.GetValues(), nil
 	case *apiv2beta1.Predicate_StringValues_:
@@ -537,11 +532,7 @@ func toValue(v interface{}) (interface{}, error) {
 	case *apiv1beta1.Predicate_StringValue:
 		return v.StringValue, nil
 	case *apiv1beta1.Predicate_TimestampValue:
-		ts, err := ptypes.Timestamp(v.TimestampValue)
-		if err != nil {
-			return nil, util.NewInvalidInputError("invalid timestamp: %v", err)
-		}
-		return ts.Unix(), nil
+		return v.TimestampValue.AsTime().Unix(), nil
 	case *apiv1beta1.Predicate_IntValues:
 		return v.IntValues.GetValues(), nil
 	case *apiv1beta1.Predicate_StringValues:

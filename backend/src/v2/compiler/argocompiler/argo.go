@@ -47,14 +47,11 @@ type Options struct {
 	CacheDisabled bool
 	// optional
 	DefaultWorkspace *k8score.PersistentVolumeClaimSpec
-	// optional, default workspace size from API server config
-	DefaultWorkspaceSize string
 	// TODO(Bobgy): add an option -- dev mode, ImagePullPolicy should only be Always in dev mode.
 }
 
 const (
-	fallbackWorkspaceSize = "10Gi" // Used if no size is set in apiserver config but workspace is requested
-	workspaceVolumeName   = "kfp-workspace"
+	workspaceVolumeName = "kfp-workspace"
 )
 
 func Compile(jobArg *pipelinespec.PipelineJob, kubernetesSpecArg *pipelinespec.SinglePlatformSpec, opts *Options) (*wfapi.Workflow, error) {
@@ -367,6 +364,7 @@ func hashValue(value interface{}) (string, error) {
 const (
 	paramComponent               = "component"      // component spec
 	paramTask                    = "task"           // task spec
+	paramTaskName                = "task-name"      // task name
 	paramContainer               = "container"      // container spec
 	paramImporter                = "importer"       // importer spec
 	paramRuntimeConfig           = "runtime-config" // job runtime config, pipeline level inputs
@@ -376,14 +374,18 @@ const (
 	paramIterationIndex          = "iteration-index"
 	paramExecutorInput           = "executor-input"
 	paramDriverType              = "driver-type"
-	paramCachedDecision          = "cached-decision"            // indicate hit cache or not
-	paramPodSpecPatch            = "pod-spec-patch"             // a strategic patch merged with the pod spec
-	paramCondition               = "condition"                  // condition = false -> skip the task
-	paramKubernetesConfig        = "kubernetes-config"          // stores Kubernetes config
-	paramRetryMaxCount           = "retry-max-count"            // limit on number of retries
-	paramRetryBackOffDuration    = "retry-backoff-duration"     // duration of backoff between retries
-	paramRetryBackOffFactor      = "retry-backoff-factor"       // multiplier for backoff duration between retries
-	paramRetryBackOffMaxDuration = "retry-backoff-max-duration" // limit on backoff duration between retries
+	paramCachedDecision          = "cached-decision"             // indicate hit cache or not
+	paramPodSpecPatch            = "pod-spec-patch"              // a strategic patch merged with the pod spec
+	paramCondition               = "condition"                   // condition = false -> skip the task
+	paramKubernetesConfig        = "kubernetes-config"           // stores Kubernetes config
+	paramRetryMaxCount           = "retry-max-count"             // limit on number of retries
+	paramRetryBackOffDuration    = "retry-backoff-duration"      // duration of backoff between retries
+	paramRetryBackOffFactor      = "retry-backoff-factor"        // multiplier for backoff duration between retries
+	paramRetryBackOffMaxDuration = "retry-backoff-max-duration"  // limit on backoff duration between retries
+	paramPodAnnotationKey        = "pod-metadata-annotation-key" // task-specific pod metadata annotation key
+	paramPodAnnotationVal        = "pod-metadata-annotation-val" // task-specific pod metadata annotation value
+	paramPodLabelKey             = "pod-metadata-label-key"      // task-specific pod metadata label key
+	paramPodLabelVal             = "pod-metadata-label-val"      // task-specific pod metadata label value
 )
 
 func runID() string {
@@ -502,16 +504,14 @@ func convertStructToPVCSpec(structVal *structpb.Struct) (*k8score.PersistentVolu
 // GetWorkspacePVC constructs a PersistentVolumeClaim for the workspace.
 // It uses the default PVC spec (from API server config), and applies any user-specified
 // overrides from the pipeline spec, including the requested storage size.
+// The workspace size is required and must be specified by the user.
 func GetWorkspacePVC(
 	workspace *pipelinespec.WorkspaceConfig,
 	opts *Options,
 ) (k8score.PersistentVolumeClaim, error) {
 	sizeStr := workspace.GetSize()
-	if sizeStr == "" && opts != nil && opts.DefaultWorkspaceSize != "" {
-		sizeStr = opts.DefaultWorkspaceSize
-	}
 	if sizeStr == "" {
-		sizeStr = fallbackWorkspaceSize
+		return k8score.PersistentVolumeClaim{}, fmt.Errorf("workspace size is required but not specified")
 	}
 
 	k8sWorkspace := workspace.GetKubernetes()
